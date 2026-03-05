@@ -1,5 +1,4 @@
 import tkinter as tk
-from app.logica import *
 
 def iniciar_app():
     # Crea ventana principal
@@ -25,71 +24,110 @@ def iniciar_app():
     expresion = tk.StringVar()
 
     # Operaciones permitidas
-    lista_operaciones = ["/","*","+","-"]
-    lista_expresion = [""]
+    lista_operaciones = {"/","*","+","-"}
 
+    # Variables auxiliares
+    lista_expresion = [""]
+    resultado = False
+    error = False
+
+    # Agrega un valor a la lista de operaciones
     def agrega_valor(valor):
         lista_expresion[-1] += valor
         expresion.set("".join(lista_expresion))
 
+    # Que hacer si se presiona un boton
     def boton_presionado(valor):
+        nonlocal error
+        nonlocal resultado
+        # Si existio un error
+        if error:
+            if valor == "C":
+                error = False
+                resultado = False
+                lista_expresion.clear()
+                lista_expresion.append("")
+                agrega_valor("")
+        
         # Si se presiona un digito 
-        if valor.isdigit():
-            if lista_expresion[-1] in lista_operaciones:
+        elif valor.isdigit():
+            if resultado:
+                lista_expresion.clear()
+                lista_expresion.append("")
+                resultado = False
+            elif lista_expresion[-1] in lista_operaciones:
                 lista_expresion.append("")
             agrega_valor(valor)
 
         # Si se presiona un punto
-        if valor == ".":
-            if lista_expresion[-1] not in lista_operaciones and "." not in lista_expresion[-1]:
+        elif valor == "." and lista_expresion[-1].isdigit():
+            if resultado:
+                lista_expresion.clear()
+                lista_expresion.append("")
+                agrega_valor(".")
+                resultado = False
+            elif "." not in lista_expresion[-1]:
+                if lista_expresion[-1] in lista_operaciones:
+                    lista_expresion.append("")
                 agrega_valor(valor)
 
         # Si se presiona una operacion
-        if valor in lista_operaciones and lista_expresion[-1] != "":
+        elif valor in lista_operaciones and lista_expresion[-1] != "":
             if lista_expresion[-1][-1].isdigit():
                 lista_expresion.append("")
                 agrega_valor(valor)
+            resultado = False
 
         # Si se presiona la tecla de borrado
-        if valor == "C":
+        elif valor == "C":
             lista_expresion.clear()
             lista_expresion.append("")
             expresion.set("")
+            resultado = False
 
         # Si se presiona la tecla =
-        if valor == "=":
-            expresion.set("".join(resolver_expresion(lista_expresion)))
+        elif valor == "=" and len(lista_expresion) >= 3:
+            resultado = resolver_expresion(lista_expresion)
+            expresion.set("".join(resultado))
             lista_expresion.clear()
-            lista_expresion.append("")
-
-    def resolver_expresion(lista_expresion):
-        for num in lista_expresion:
-            if num not in lista_operaciones:
-                lista_expresion[lista_expresion.index(num)] = float(num)
+            lista_expresion.append(resultado)
+            resultado = True
+        print(lista_expresion)
     
+    # Resuelve la expresion
+    def resolver_expresion(lista_expresion):
+        nonlocal error
+        # Convierte a float los numeros para evitar problemas
+        for i, num in enumerate(lista_expresion):
+            if num not in lista_operaciones:
+                lista_expresion[i] = float(num)
+
+        # Recorre toda la lista hasta que solo quede 1 valor
         while len(lista_expresion) > 1:
-            for elemento in lista_expresion:
+            for i, elemento in enumerate(lista_expresion):
+                # Primero verifica multiplicacion y division
                 if elemento == "*":
-                    indice = lista_expresion.index(elemento)
-                    lista_expresion[indice] = lista_expresion[indice - 1] * lista_expresion[indice + 1]
-                    lista_expresion.pop(indice + 1)
-                    lista_expresion.pop(indice - 1)
+                    lista_expresion[i] = lista_expresion[i - 1] * lista_expresion[i + 1]
+                    lista_expresion.pop(i + 1)
+                    lista_expresion.pop(i - 1)
                 elif elemento == "/":
-                    indice = lista_expresion.index(elemento)
-                    lista_expresion[indice] = lista_expresion[indice - 1] / lista_expresion[indice + 1]
-                    lista_expresion.pop(indice + 1)
-                    lista_expresion.pop(indice - 1)
+                    if (lista_expresion[ i+ 1]) == 0:
+                        error = True
+                        return "Error div por 0. C para continuar"
+                    lista_expresion[i] = lista_expresion[i - 1] / lista_expresion[i + 1]
+                    lista_expresion.pop(i + 1)
+                    lista_expresion.pop(i - 1)
+                # Luego verifica sumas y restas
                 elif elemento == "+":
-                    indice = lista_expresion.index(elemento)
-                    lista_expresion[indice] = lista_expresion[indice - 1] + lista_expresion[indice + 1]
-                    lista_expresion.pop(indice + 1)
-                    lista_expresion.pop(indice - 1)
+                    lista_expresion[i] = lista_expresion[i - 1] + lista_expresion[i + 1]
+                    lista_expresion.pop(i + 1)
+                    lista_expresion.pop(i - 1)
                 elif elemento == "-":
-                    indice = lista_expresion.index(elemento)
-                    lista_expresion[indice] = lista_expresion[indice - 1] - lista_expresion[indice + 1]
-                    lista_expresion.pop(indice + 1)
-                    lista_expresion.pop(indice - 1)
-        
+                    lista_expresion[i] = lista_expresion[i - 1] - lista_expresion[i + 1]
+                    lista_expresion.pop(i + 1)
+                    lista_expresion.pop(i - 1)
+
+        # Si es entero retiramos el punto decimal
         if lista_expresion[0].is_integer():
             return str(int(lista_expresion[0]))
         else:
@@ -100,6 +138,8 @@ def iniciar_app():
     color2 = "purple"
     color3 = "blue"
     color4 = "lightgreen"
+
+    # Fuente
     fuente = ("Helvetica", 24)
 
     # Lista de valores de los botones
