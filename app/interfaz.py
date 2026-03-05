@@ -1,4 +1,5 @@
 import tkinter as tk
+from app.logica import *
 
 def iniciar_app():
     # Crea ventana principal
@@ -23,6 +24,77 @@ def iniciar_app():
     # Variable de expresion del visor
     expresion = tk.StringVar()
 
+    # Operaciones permitidas
+    lista_operaciones = ["/","*","+","-"]
+    lista_expresion = [""]
+
+    def agrega_valor(valor):
+        lista_expresion[-1] += valor
+        expresion.set("".join(lista_expresion))
+
+    def boton_presionado(valor):
+        # Si se presiona un digito 
+        if valor.isdigit():
+            if lista_expresion[-1] in lista_operaciones:
+                lista_expresion.append("")
+            agrega_valor(valor)
+
+        # Si se presiona un punto
+        if valor == ".":
+            if lista_expresion[-1] not in lista_operaciones and "." not in lista_expresion[-1]:
+                agrega_valor(valor)
+
+        # Si se presiona una operacion
+        if valor in lista_operaciones and lista_expresion[-1] != "":
+            if lista_expresion[-1][-1].isdigit():
+                lista_expresion.append("")
+                agrega_valor(valor)
+
+        # Si se presiona la tecla de borrado
+        if valor == "C":
+            lista_expresion.clear()
+            lista_expresion.append("")
+            expresion.set("")
+
+        # Si se presiona la tecla =
+        if valor == "=":
+            expresion.set("".join(resolver_expresion(lista_expresion)))
+            lista_expresion.clear()
+            lista_expresion.append("")
+
+    def resolver_expresion(lista_expresion):
+        for num in lista_expresion:
+            if num not in lista_operaciones:
+                lista_expresion[lista_expresion.index(num)] = float(num)
+    
+        while len(lista_expresion) > 1:
+            for elemento in lista_expresion:
+                if elemento == "*":
+                    indice = lista_expresion.index(elemento)
+                    lista_expresion[indice] = lista_expresion[indice - 1] * lista_expresion[indice + 1]
+                    lista_expresion.pop(indice + 1)
+                    lista_expresion.pop(indice - 1)
+                elif elemento == "/":
+                    indice = lista_expresion.index(elemento)
+                    lista_expresion[indice] = lista_expresion[indice - 1] / lista_expresion[indice + 1]
+                    lista_expresion.pop(indice + 1)
+                    lista_expresion.pop(indice - 1)
+                elif elemento == "+":
+                    indice = lista_expresion.index(elemento)
+                    lista_expresion[indice] = lista_expresion[indice - 1] + lista_expresion[indice + 1]
+                    lista_expresion.pop(indice + 1)
+                    lista_expresion.pop(indice - 1)
+                elif elemento == "-":
+                    indice = lista_expresion.index(elemento)
+                    lista_expresion[indice] = lista_expresion[indice - 1] - lista_expresion[indice + 1]
+                    lista_expresion.pop(indice + 1)
+                    lista_expresion.pop(indice - 1)
+        
+        if lista_expresion[0].is_integer():
+            return str(int(lista_expresion[0]))
+        else:
+            return str(lista_expresion[0])
+
     # Colores de los botones
     color1 = "lightblue"
     color2 = "purple"
@@ -42,7 +114,8 @@ def iniciar_app():
             font = fuente,
             bg = "white",
             bd = 5,
-            relief = "solid").grid(
+            relief = "solid",
+            anchor = "e").grid(
                 column = 0,
                 row = 0,
                 columnspan = 4,
@@ -57,7 +130,8 @@ def iniciar_app():
                   font = fuente,
                   bg = color,
                   bd = 5,
-                  relief = "solid").grid(
+                  relief = "solid",
+                  command = lambda valor=valor: boton_presionado(valor)).grid(
                     column = col,
                     row = ren,
                     padx = 5,
@@ -70,7 +144,8 @@ def iniciar_app():
                   font = fuente,
                   bg = color4,
                   bd = 5,
-                  relief = "solid").grid(
+                  relief = "solid",
+                  command = lambda: boton_presionado("=")).grid(
                     column = 0,
                     columnspan = 4,
                     row = 5,
